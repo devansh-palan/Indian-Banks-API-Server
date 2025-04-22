@@ -1,4 +1,4 @@
-# Bank API
+# Indian Banks API
 
 A RESTful API built with FastAPI for managing bank and branch data.
 
