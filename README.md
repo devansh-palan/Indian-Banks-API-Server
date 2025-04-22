@@ -4,7 +4,7 @@ A RESTful API built with FastAPI for managing bank and branch data.
 
 ## Overview
 
-This project provides a robust API for banking information management, allowing users to create, read, update, and delete bank and branch details. It's built with FastAPI and uses PostgreSQL for data storage.
+This project provides a robust API for banking information management, allowing users to create, read, update, and delete bank and branch details. It's built with FastAPI and uses PostgreSQL for data storage.(Completed in 3 days)
 
 ## Features
 
