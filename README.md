@@ -9,7 +9,7 @@ This project provides a robust API for banking information management, allowing 
 ## Features
 
 - CRUD operations for banks and branches
-- Search branches by city and bank ID
+- Search branches by ifsc,city and bank ID
 - Asynchronous database operations
 - Well-documented API endpoints
 
