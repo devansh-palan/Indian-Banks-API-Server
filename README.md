@@ -71,7 +71,43 @@ This project provides a robust API for banking information management, allowing 
    JOIN banks bk ON b.bank_id = bk.id;
    ```
 
-5. Run the application:
+5. Import data from CSV files:
+   - Prepare your CSV files for banks and branches with appropriate column headers
+   - For banks.csv:
+     ```bash
+     psql -U postgres -d banks -c "\COPY banks(id, name) FROM '/path/to/banks.csv' DELIMITER ',' CSV HEADER;"
+     ```
+   - For branches.csv:
+     ```bash
+     psql -U postgres -d banks -c "\COPY branches(ifsc, bank_id, branch, address, city, district, state) FROM '/path/to/branches.csv' DELIMITER ',' CSV HEADER;"
+     ```
+   - Alternatively, you can use Python to import the data:
+     ```python
+     import pandas as pd
+     import psycopg2
+
+     # Connect to your database
+     conn = psycopg2.connect("dbname=banks user=postgres password=yourpassword")
+     cursor = conn.cursor()
+
+     # Import banks data
+     banks_df = pd.read_csv('banks.csv')
+     for _, row in banks_df.iterrows():
+         cursor.execute("INSERT INTO banks (id, name) VALUES (%s, %s)",
+                       (row['id'], row['name']))
+
+     # Import branches data
+     branches_df = pd.read_csv('branches.csv')
+     for _, row in branches_df.iterrows():
+         cursor.execute("INSERT INTO branches (ifsc, bank_id, branch, address, city, district, state) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                       (row['ifsc'], row['bank_id'], row['branch'], row['address'], row['city'], row['district'], row['state']))
+
+     # Commit changes and close connection
+     conn.commit()
+     conn.close()
+     ```
+
+6. Run the application:
    ```bash
    uvicorn main:app --reload
    ```
