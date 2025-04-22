@@ -1,343 +1,200 @@
-Indian-Banks-API-Server
-A FastAPI-based RESTful API for managing bank and branch information, with support for CRUD operations and querying branches by city. The API interacts with a PostgreSQL database, using a bank_branches view to combine data from banks and branches tables.
-Table of Contents
+# Bank API
+
+A RESTful API built with FastAPI for managing bank and branch data.
+
+## Overview
+
+This project provides a robust API for banking information management, allowing users to create, read, update, and delete bank and branch details. It's built with FastAPI and uses PostgreSQL for data storage.
+
+## Features
+
+- CRUD operations for banks and branches
+- Search branches by city and bank ID
+- Asynchronous database operations
+- Well-documented API endpoints
+
+## Tech Stack
 
-Features
-Technologies
-Prerequisites
-Installation
-Database Setup
-Running the Application
-API Endpoints
-Testing
-Project Structure
-Contributing
-License
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern, fast web framework for building APIs
+- [PostgreSQL](https://www.postgresql.org/) - Powerful, open-source relational database
+- [asyncpg](https://github.com/MagicStack/asyncpg) - High-performance PostgreSQL client library for Python
+- [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
+
+## Installation
+
+### Prerequisites
+
+- Python 3.7+
+- PostgreSQL
+
+### Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/bank-api.git
+   cd bank-api
+   ```
+
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. Configure your PostgreSQL connection:
+   Update the DATABASE_URL in `database.py` with your credentials:
+   ```python
+   DATABASE_URL = "postgresql+asyncpg://username:password@localhost:5432/banks"
+   ```
+
+4. Create the database schema:
+   ```sql
+   CREATE TABLE banks (
+       id INTEGER PRIMARY KEY,
+       name VARCHAR(255) NOT NULL
+   );
+
+   CREATE TABLE branches (
+       ifsc VARCHAR(11) PRIMARY KEY,
+       bank_id INTEGER REFERENCES banks(id),
+       branch VARCHAR(255) NOT NULL,
+       address TEXT NOT NULL,
+       city VARCHAR(255) NOT NULL,
+       district VARCHAR(255) NOT NULL,
+       state VARCHAR(255) NOT NULL
+   );
+
+   CREATE VIEW bank_branches AS
+   SELECT b.ifsc, b.bank_id, bk.name as bank_name, b.branch, b.address, b.city, b.district, b.state
+   FROM branches b
+   JOIN banks bk ON b.bank_id = bk.id;
+   ```
+
+5. Run the application:
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+## API Endpoints
+
+### Banks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/banks/` | Get all banks |
+| GET | `/api/v1/banks/{bank_id}` | Get a specific bank by ID |
+| POST | `/api/v1/banks/` | Create a new bank |
+| PUT | `/api/v1/banks/{bank_id}` | Update a bank |
+| DELETE | `/api/v1/banks/{bank_id}` | Delete a bank |
+
+### Branches
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/branches/` | Get all branches |
+| GET | `/api/v1/branches/{ifsc}` | Get a specific branch by IFSC code |
+| POST | `/api/v1/branches/` | Create a new branch |
+| PUT | `/api/v1/branches/{ifsc}` | Update a branch |
+| DELETE | `/api/v1/branches/{ifsc}` | Delete a branch |
+| GET | `/api/v1/branches/city/{city}/{bank_id}` | Get branches by city and bank ID |
+
+## API Documentation
 
-Features
+When the server is running, you can access the interactive API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-Create, read, update, and delete (CRUD) operations for banks and branches.
-Query branches by city and bank ID.
-Uses a PostgreSQL database with a bank_branches view to join banks and branches data.
-Input validation with Pydantic models.
-Asynchronous database operations using the databases library.
-Automatic database connection management during application lifecycle.
+## Request/Response Examples
 
-Technologies
+### Create a Bank
 
-FastAPI: Web framework for building APIs.
-PostgreSQL: Relational database for storing bank and branch data.
-databases: Asynchronous database access library.
-Pydantic: Data validation and settings management.
-Uvicorn: ASGI server for running the FastAPI application.
-Python 3.8+: Programming language.
+Request:
+```http
+POST /api/v1/banks/
+Content-Type: application/json
 
-Prerequisites
-
-Python 3.8 or higher
-PostgreSQL 12 or higher
-Git
-Postman or another API testing tool (optional, for manual testing)
-
-Installation
-
-Clone the Repository:
-git clone https://github.com/your-username/indian-banks-api-server.git
-cd indian-banks-api-server
-
-
-Set Up a Virtual Environment:
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-
-Install Dependencies:
-pip install fastapi uvicorn databases[postgresql] pydantic asyncpg
-
-
-
-Database Setup
-
-Install PostgreSQL:
-
-Follow instructions for your OS: PostgreSQL Downloads.
-
-
-Create a Database:
-CREATE DATABASE banks;
-
-
-Create Tables and View:Execute the following SQL in your PostgreSQL client (e.g., psql):
--- Create banks table
-CREATE TABLE banks (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
-);
-
--- Create branches table
-CREATE TABLE branches (
-    ifsc VARCHAR(11) PRIMARY KEY,
-    bank_id INTEGER NOT NULL,
-    branch VARCHAR(255) NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    city VARCHAR(100) NOT NULL,
-    district VARCHAR(100) NOT NULL,
-    state VARCHAR(100) NOT NULL,
-    FOREIGN KEY (bank_id) REFERENCES banks(id)
-);
-
--- Create bank_branches view
-CREATE VIEW bank_branches AS
-SELECT 
-    b.ifsc,
-    b.bank_id,
-    k.name AS bank_name,
-    b.branch,
-    b.address,
-    b.city,
-    b.district,
-    b.state
-FROM branches b
-JOIN banks k ON b.bank_id = k.id;
-
-
-Import Data from CSV Files:
-
-The repository includes banks.csv and branches.csv for populating the tables.
-Use the PostgreSQL COPY command or a tool like pgAdmin to import data. Example:\COPY banks(id, name) FROM 'banks.csv' DELIMITER ',' CSV HEADER;
-\COPY branches(ifsc, bank_id, branch, address, city, district, state) FROM 'branches.csv' DELIMITER ',' CSV HEADER;
-
-
-Ensure the CSV files match the table schemas (e.g., banks.csv has id and name columns).
-
-
-Update Database URL:
-
-Open database.py and ensure the DATABASE_URL matches your PostgreSQL credentials:DATABASE_URL = "postgresql+asyncpg://postgres:your_password@localhost:5432/banks"
-
-
-
-
-
-Running the Application
-
-Start the FastAPI Server:
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-
-
-The API will be available at http://127.0.0.1:8000.
-Swagger UI is available at http://127.0.0.1:8000/docs.
-
-
-Verify the Application:
-
-Visit http://127.0.0.1:8000/ to see the welcome message:{"message": "Welcome to the Bank API"}
-
-
-
-
-
-API Endpoints
-All endpoints are prefixed with /api/v1.
-Banks
-
-
-
-Method
-Endpoint
-Description
-Request Body
-Response
-
-
-
-POST
-/banks/
-Create a new bank
-{"id": 171, "name": "HDFC Bank"}
-{"id": 171, "name": "HDFC Bank"}
-
-
-GET
-/banks/
-List all banks
--
-[{"id": 171, "name": "HDFC Bank"}, ...]
-
-
-GET
-/banks/{bank_id}
-Get a bank by ID
--
-{"id": 171, "name": "HDFC Bank"}
-
-
-PUT
-/banks/{bank_id}
-Update a bank
-{"id": 171, "name": "HDFC Bank Ltd"}
-{"id": 171, "name": "HDFC Bank Ltd"}
-
-
-DELETE
-/banks/{bank_id}
-Delete a bank
--
-{"detail": "Bank deleted"}
-
-
-Branches
-
-
-
-Method
-Endpoint
-Description
-Request Body
-Response
-
-
-
-POST
-/branches/
-Create a new branch
-{"ifsc": "AB232431413", "bank_id": 171, "branch": "HB3", "address": "123 Vidharbha Road", "city": "Nagpur", "district": "Vidharbha", "state": "Maharashtra"}
-{"ifsc": "AB232431413", "bank_id": 171, "bank_name": "HDFC Bank", ...}
-
-
-GET
-/branches/
-List all branches
--
-[{"ifsc": "AB232431413", "bank_id": 171, "bank_name": "HDFC Bank", ...}, ...]
-
-
-GET
-/branches/{ifsc}
-Get a branch by IFSC
--
-{"ifsc": "AB232431413", "bank_id": 171, "bank_name": "HDFC Bank", ...}
-
-
-PUT
-/branches/{ifsc}
-Update a branch
-{"ifsc": "AB232431413", "bank_id": 171, "branch": "HB3 Updated", ...}
-{"ifsc": "AB232431413", "bank_id": 171, "bank_name": "HDFC Bank", ...}
-
-
-DELETE
-/branches/{ifsc}
-Delete a branch
--
-{"detail": "Branch deleted"}
-
-
-GET
-/branches/city/{city}/{bank_id}
-List branches by city and bank ID
--
-[{"bank_name": "HDFC Bank", "ifsc": "AB232431413", "branch": "HB3", "city": "Nagpur"}, ...]
-
-
-Testing
-
-Using Postman:
-
-Create a Bank:
-
-URL: http://127.0.0.1:8000/api/v1/banks/
-Method: POST
-Headers: Content-Type: application/json
-Body:{
-    "id": 171,
-    "name": "HDFC Bank"
+{
+  "id": 1,
+  "name": "State Bank of India"
 }
+```
 
-
-Expected Response: 200 OK{
-    "id": 171,
-    "name": "HDFC Bank"
+Response:
+```json
+{
+  "id": 1,
+  "name": "State Bank of India"
 }
+```
 
+### Create a Branch
 
+Request:
+```http
+POST /api/v1/branches/
+Content-Type: application/json
 
-
-Create a Branch:
-
-URL: http://127.0.0.1:8000/api/v1/branches/
-Method: POST
-Headers: Content-Type: application/json
-Body:{
-    "ifsc": "AB232431413",
-    "bank_id": 171,
-    "branch": "HB3",
-    "address": "123 Vidharbha Road",
-    "city": "Nagpur",
-    "district": "Vidharbha",
-    "state": "Maharashtra"
+{
+  "ifsc": "SBIN0001234",
+  "bank_id": 1,
+  "branch": "Main Branch",
+  "address": "123 Main St",
+  "city": "Mumbai",
+  "district": "Mumbai",
+  "state": "Maharashtra"
 }
+```
 
-
-Expected Response: 200 OK{
-    "ifsc": "AB232431413",
-    "bank_id": 171,
-    "bank_name": "HDFC Bank",
-    "branch": "HB3",
-    "address": "123 Vidharbha Road",
-    "city": "Nagpur",
-    "district": "Vidharbha",
-    "state": "Maharashtra"
+Response:
+```json
+{
+  "bank_name": "State Bank of India",
+  "ifsc": "SBIN0001234",
+  "branch": "Main Branch",
+  "address": "123 Main St",
+  "city": "Mumbai",
+  "district": "Mumbai",
+  "state": "Maharashtra"
 }
+```
 
+### Get Branches by City and Bank ID
 
+Request:
+```http
+GET /api/v1/branches/city/Mumbai/1
+```
 
-
-Get Branches by City:
-
-URL: http://127.0.0.1:8000/api/v1/branches/city/Nagpur/171
-Method: GET
-Expected Response: 200 OK[
-    {
-        "bank_name": "HDFC Bank",
-        "ifsc": "AB232431413",
-        "branch": "HB3",
-        "city": "Nagpur"
-    }
+Response:
+```json
+[
+  {
+    "bank_name": "State Bank of India",
+    "ifsc": "SBIN0001234",
+    "branch": "Main Branch",
+    "city": "Mumbai"
+  }
 ]
+```
 
+## Error Handling
 
+The API returns appropriate HTTP status codes:
 
+- 200 OK: Successful request
+- 400 Bad Request: Invalid input or business rule violation
+- 404 Not Found: Resource not found
+- 500 Internal Server Error: Server-side issue
 
+## Contributing
 
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Verify View Updates:
+## License
 
-The bank_branches view automatically updates when you insert, update, or delete rows in branches or banks, as it’s a JOIN of these tables.
-Query directly:SELECT * FROM bank_branches WHERE ifsc = 'AB232431413';
-
-
-
-
-
-Project Structure
-indian-banks-api-server/
-├── database.py        # Database configuration and connection
-├── main.py           # FastAPI application setup and entry point
-├── models.py         # Pydantic models for data validation
-├── routes.py         # API routes and endpoint logic
-├── banks.csv         # CSV file for banks data
-├── branches.csv      # CSV file for branches data
-├── README.md         # Project documentation
-└── requirements.txt  # Python dependencies (optional)
-
-Contributing
-
-Fork the repository.
-Create a feature branch (git checkout -b feature/YourFeature).
-Commit your changes (git commit -m "Add YourFeature").
-Push to the branch (git push origin feature/YourFeature).
-Open a pull request.
-
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
